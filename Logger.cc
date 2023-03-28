@@ -8,10 +8,12 @@ Logger& Logger::instance(){
 	static Logger logger;
 	return logger;
 }
+
 // 设置日志级别
 void Logger::setLogLevel(int level){
 	logLevel_ = level;
 }
+
 // 写日志接口
 // 格式:[级别] time : msg
 void Logger::log(std::string msg){
@@ -20,13 +22,13 @@ void Logger::log(std::string msg){
 			std::cout << "[INFO]";
 			break;
 		case ERROR:
-			std::cout << "[INFO]";
+			std::cout << "[ERROR]";
 			break;
 		case FATAL:
-			std::cout << "[INFO]";
+			std::cout << "[FATAL]";
 			break;
 		case DEBUG:
-			std::cout << "[INFO]";
+			std::cout << "[DEBUG]";
 			break;
 		default:
 			break;

@@ -3,6 +3,14 @@
 #include "noncopyable.h"
 
 #include<string>
+/*
+   每个宏都会调用Logger实例对象的相应接口,设置日志级别并输出日志信息.
+   其中,LOG_FATAL宏还会在输出日志信息后调用exit(-1)函数退出程序.
+   并且,LOG_DEBUG在MUDEBUG编译选项下才会有输出,默认没有输出.
+
+   对于Logger类,需要注意的是,Logger类的构造函数是私有的,即不能直接创建Logger对象,这是确保Logger类的唯一性.
+
+ */
 
 // LOG_INFO("%s %d",arg1,arg2...)
 #define LOG_INFO(logmsgFormat,...) \
@@ -58,7 +66,6 @@ enum LogLevel{
 	DEBUG // 调试信息
 };
 
-// 输出一个日志类
 class Logger {
 	public:
 		// 获取日志类唯一的实例对象

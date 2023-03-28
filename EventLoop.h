@@ -13,7 +13,9 @@
 class Channel;
 class Poller;
 
-// 事件循环类,主要包含了Channel和Poller(epoll)两大模块
+/* 
+   事件循环类,主要包含了Channel和Poller(epoll)两大模块
+*/
 class EventLoop:noncopyable {
 	public:
 		using Functor = std::function<void()>;
@@ -24,6 +26,7 @@ class EventLoop:noncopyable {
 		void loop(); // 开启事件循环
 		void quit(); // 退出事件循环
 
+		// 返回poller发生事件的时间点
 		Timestamp pollReturnTime() const { return pollReturnTime_; }
 		
 		// 在当前loop中执行cb
@@ -35,7 +38,7 @@ class EventLoop:noncopyable {
 		void wakeup();
 		
 		// 实际上是直接调用poller的方法,epoll_ctl
-		void updateChannel(Channel* channel);
+		void updateChannel(Channel* channel); // for poller
 		void removeChannel(Channel* channel);
 		bool hasChannel(Channel* channel);
 
@@ -43,12 +46,13 @@ class EventLoop:noncopyable {
 		bool isInLoopThread() const
 			{ return threadId_ == CurrentThread::tid(); }
 	private:
-		void handleRead(); // waked up
+		// 被wakeupChannel_的read事件回调函数调用,唤醒loop所在线程
+		void handleRead();
 		void doPendingFunctors(); // 执行回调函数
 
 		using ChannelList = std::vector<Channel*>;
 
-		std::atomic<bool> looping_; // 原子操作
+		std::atomic<bool> looping_; // 标志是否在循环中
 		std::atomic<bool> quit_; // 标志是否退出loop
 
 		const pid_t threadId_; // 记录当前loop所在线程的id
@@ -56,14 +60,15 @@ class EventLoop:noncopyable {
 		Timestamp pollReturnTime_; // poller返回发生事件的时间点
 		std::unique_ptr<Poller> poller_;
 
-		int wakeupFd_; // ***重点当mainLoop获取到channel
-		// 通过轮询算法,选择一个subLoop,通过wakeupFd_唤醒loop
+		// 用于唤醒loop所在的线程的文件描述符
+		int wakeupFd_;
 		std::unique_ptr<Channel> wakeupChannel_;
 
+		// 存储发生事件的Channel对象
 		ChannelList activeChannels_;
 		
 		// 标识当前loop是否有需要执行的回调操作
 		std::atomic<bool> callingPendingFunctors_; 
 		std::vector<Functor> pendingFunctors_; // 存储loop需要执行的回调操作
-		std::mutex mutex_; // 互斥锁,用来保护上面vector的线程安全操作
+		std::mutex mutex_; // 互斥锁,用来保护上面vector的线程安全
 };

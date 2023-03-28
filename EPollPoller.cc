@@ -10,6 +10,16 @@ const int kNew = -1; // 表示channel从未添加进poller中
 const int kAdded = 1; // channel在poller的channelMap中
 const int kDeleted = 2; // channel不在channelMap中
 
+/*
+   该类主要用于处理事件轮询和Channel的添加,删除和修改等操作.其中,事件轮询使用epoll_wait函数实现,轮询结果通过参数activeChannels返回给EventLoop.同时该类还维护了一个channelMap,用于存储所有channel,并在需要时调用epoll_ctl函数对其进行添加,删除和修改等操作.
+   构造函数:创建epollfd和events数组(size:16),并对其初始化.
+   析构函数:释放epollfd
+   poll函数:调用epoll_wait函数进行事件轮询,返回发生事件的channel列表,并设置超时时间.
+	removeChannel函数:向channelMap中添加或修改channel,并调用epoll_ctl函数对其进行添加,修改或删除.
+	update函数:调用epoll_ctl函数对channel进行添加,修改或删除操作.
+	fillActiveChannels函数:将events数组中的所有发生事件的channel添加到activeChannels列表中.
+ */
+
 EPollPoller::EPollPoller(EventLoop* loop)
 	:Poller(loop),
 	 epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
@@ -29,10 +39,7 @@ Timestamp EPollPoller::poll(int timeoutMs,ChannelList* activeChannels){
 	// 这里写日志对效率影响大,用LOG_DEBUG更加合理
 	LOG_INFO("func=%s -> fd total count:%lu \n",__FUNCTION__,channels_.size());
 
-	int numEvents = ::epoll_wait(epollfd_,
-			&*events_.begin(),
-			static_cast<int>(events_.size()),
-			timeoutMs);
+	int numEvents = ::epoll_wait(epollfd_,&*events_.begin(),static_cast<int>(events_.size()),timeoutMs);
 
 	int savedErrno = errno; // errno是全局的,所以save一下
 	Timestamp now(Timestamp::now());

@@ -1,13 +1,18 @@
+#include<sys/epoll.h>
+
 #include"Channel.h"
 #include"Logger.h"
 #include"EventLoop.h"
-
-#include<sys/epoll.h>
 
 const int Channel::kNoneEvent = 0;
 const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
 const int Channel::kWriteEvent = EPOLLOUT;
 
+/*
+   tie函数的作用是在Channel中绑定一个shared_ptr对象,目的是在该shared_ptr对象被销毁时,将Channel对象从其所属的EventLoop中删除.如果不使用tie函数,则在Channel对象被销毁时,可能会在其所属的EventLoop中引发空悬指针问题.
+   handleEvent函数的作用是处理Channel上的事件.在该函数中,首先判断tied_标志是否为true.如果为true,说明在构造函数时,使用了tie函数绑定了一个shared_ptr对象,因此需要先提升shared_ptr对象的引用计数,以确保在处理事件的过程中,该shared_ptr对象不会被析构.
+	接下来,handleEventWithGuard函数会根据收到的事件类型,调用相应的回调函数.
+ */
 
 Channel::Channel(EventLoop* loop,int fd)
 	:loop_(loop),
@@ -54,6 +59,7 @@ void Channel::handleEvent(Timestamp receiveTime){
 }
 
 // 根据poller通知给channel的相应事件,由channel负责调用回调函数
+// 日志输出可以更加详细的说明发生了哪些事件,比如输出revents_中每个位对应的事件名称
 void Channel::handleEventWithGuard(Timestamp receiveTime){
 	LOG_INFO("channel handleEvent revents:%d\n",revents_);
 
@@ -81,4 +87,3 @@ void Channel::handleEventWithGuard(Timestamp receiveTime){
 		}
 	}
 }
-

@@ -7,6 +7,10 @@ Timestamp::Timestamp(int64_t microSecondsSinceEpoch):microSecondsSinceEpoch_(mic
 Timestamp Timestamp::now(){
   return Timestamp(time(NULL));
 }
+/*
+   snprintf虽然可以避免缓冲区溢出问题,但是在格式化字符串时仍需要保证缓冲区的	大小足够.在这里,如果时间字符串超过128字节,就会出现问题.
+   不过这里字符串不保证超过128字节.
+ */
 std::string Timestamp::toString() const{
 	char buf[128];
 	tm* tm_time = localtime(&microSecondsSinceEpoch_);
